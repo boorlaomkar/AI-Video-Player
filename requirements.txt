@@ -1,0 +1,8 @@
+flask
+flask-login
+flask-cors
+opencv-python
+opencv-contrib-python
+numpy
+werkzeug
+Pillow
