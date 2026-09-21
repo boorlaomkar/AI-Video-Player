@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Video Player - Secure Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1535 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #f0f4f8;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 480px;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: rgba(26, 31, 58, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(124, 58, 237, 0.25);
+            border-radius: 16px;
+            padding: 32px 28px;
+            box-shadow: 0 25px 50px rgba(124, 58, 237, 0.15), 0 8px 16px rgba(0,0,0,0.4);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .login-header h1 {
+            font-size: 26px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #7c3aed, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 6px;
+        }
+
+        .subtitle {
+            font-size: 13px;
+            color: #8b92a9;
+        }
+
+        .form-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 3px;
+            border-radius: 10px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 8px 12px;
+            background: transparent;
+            border: none;
+            color: #8b92a9;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn:hover {
+            color: #e6eef6;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+            color: white;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+        }
+
+        .login-form {
+            display: none;
+        }
+
+        .login-form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #c4b5fd;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: block;
+            width: 100%;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+            pointer-events: none;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px 12px 10px 40px;
+            background: rgba(124, 58, 237, 0.05);
+            border: 1.5px solid rgba(124, 58, 237, 0.15);
+            border-radius: 8px;
+            color: #f0f4f8;
+            font-size: 13px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            background: rgba(124, 58, 237, 0.08);
+            border-color: #7c3aed;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+        }
+
+        .form-group input::placeholder {
+            color: rgba(156, 163, 175, 0.5);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 10px 24px;
+            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+        }
+
+        .btn-submit:hover {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+        }
+
+        .login-footer {
+            text-align: center;
+            margin-top: 18px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(6, 182, 212, 0.08);
+        }
+
+        .security-note {
+            font-size: 11px;
+            color: #8b92a9;
+        }
+
+        .face-register-content {
+            text-align: center;
+        }
+
+        .camera-icon {
+            width: 68px;
+            height: 68px;
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 14px;
+            font-size: 34px;
+            box-shadow: 0 8px 20px rgba(124, 58, 237, 0.25);
+        }
+
+        .face-register-content h3 {
+            font-size: 18px;
+            margin: 0 0 6px 0;
+        }
+
+        .face-register-content p {
+            color: #8b92a9;
+            font-size: 12px;
+            margin: 0 0 16px 0;
+        }
+
+        @media (max-width: 600px) {
+            .login-card {
+                padding: 30px 20px;
+            }
+
+            .login-header h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <!-- Header section -->
+            <div class="login-header">
+                <h1>AI Video Player</h1>
+                <p class="subtitle">Intelligent Video Streaming with Face Recognition</p>
+            </div>
+
+            <!-- Form tabs -->
+            <div class="form-tabs">
+                <button class="tab-btn active" data-tab="login" type="button">Login</button>
+                <button class="tab-btn" data-tab="faceLogin" type="button">Face Login</button>
+                <button class="tab-btn" data-tab="register" type="button">Register</button>
+                <button class="tab-btn" data-tab="face" type="button">Face Register</button>
+            </div>
+
+            <!-- Login form - Standard Login -->
+            <form id="loginForm" class="login-form active" onsubmit="event.preventDefault(); login()">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">👤</span>
+                        <input type="text" id="username" placeholder="Enter your username" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">🔒</span>
+                        <input type="password" id="password" placeholder="Enter your password" required>
+                    </div>
+                </div>
+
+                <div class="security-note" style="background: rgba(124, 58, 237, 0.1); padding: 10px; border-radius: 6px; margin-bottom: 14px; border-left: 3px solid #7c3aed;">
+                    🔐 Standard login with username and password only.
+                </div>
+
+                <button type="submit" class="btn-submit">
+                    <span>Login</span>
+                </button>
+            </form>
+
+            <!-- Face Login form -->
+            <form id="faceLoginForm" class="login-form" onsubmit="event.preventDefault(); loginWithFace()">
+                <div class="form-group">
+                    <label for="faceLoginUsername">Username</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">👤</span>
+                        <input type="text" id="faceLoginUsername" placeholder="Enter your username" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="faceLoginPassword">Password</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">🔒</span>
+                        <input type="password" id="faceLoginPassword" placeholder="Enter your password" required>
+                    </div>
+                </div>
+
+                <div class="security-note" style="background: rgba(124, 58, 237, 0.1); padding: 10px; border-radius: 6px; margin-bottom: 14px; border-left: 3px solid #7c3aed;">
+                    📷 Secure login with face detection. Ensure camera is accessible.
+                </div>
+
+                <button type="submit" class="btn-submit">
+                    <span>Login with Face</span>
+                </button>
+            </form>
+
+            <!-- Register form -->
+            <form id="registerForm" class="login-form" onsubmit="event.preventDefault(); register()">
+                <div class="form-group">
+                    <label for="regUsername">Username</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">👤</span>
+                        <input type="text" id="regUsername" placeholder="Choose a username" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="regPassword">Password</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">🔒</span>
+                        <input type="password" id="regPassword" placeholder="Create a strong password" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="regConfirmPassword">Confirm Password</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">✓</span>
+                        <input type="password" id="regConfirmPassword" placeholder="Confirm your password" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">Register</button>
+            </form>
+
+            <!-- Face registration form -->
+            <form id="faceForm" class="login-form" onsubmit="event.preventDefault(); registerFace()">
+                <div class="face-register-content">
+                    <div class="camera-icon">📷</div>
+                    <h3>Face Registration</h3>
+                    <p>Register your face for secure biometric login</p>
+                    
+                    <div class="form-group">
+                        <label for="faceUsername">Username</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">👤</span>
+                            <input type="text" id="faceUsername" placeholder="Enter your username" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit">Start Face Registration</button>
+                </div>
+            </form>
+
+            <!-- Footer -->
+            <div class="login-footer">
+                <p class="security-note">🔐 Secured with Advanced Encryption</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script>
+        console.log('Login page loaded');
+        
+        // Tab switching functionality
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const tabName = this.dataset.tab;
+                console.log('Switching to tab:', tabName);
+                
+                // Remove active class from all tabs and forms
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.login-form').forEach(f => f.classList.remove('active'));
+                
+                // Add active class to clicked tab and corresponding form
+                this.classList.add('active');
+                document.getElementById(tabName + 'Form').classList.add('active');
+            });
+        });
+
+        // Form submission handlers
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const faceForm = document.getElementById('faceForm');
+
+        if (loginForm) {
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                login();
+            });
+        }
+
+        if (registerForm) {
+            registerForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                register();
+            });
+        }
+
+        if (faceForm) {
+            faceForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                registerFace();
+            });
+        }
+
+        // Test that inputs are working
+        console.log('Inputs ready:');
+        console.log('- Username:', document.getElementById('username'));
+        console.log('- Password:', document.getElementById('password'));
+    </script>
+</body>
+</html>

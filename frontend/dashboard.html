@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234f46e5'><polygon points='23 7 16 12 23 17 23 7'/><rect x='1' y='5' width='15' height='14' rx='2' ry='2'/></svg>">
+    <link rel="stylesheet" href="css/style.css">
+    <title>AI Video Player - Dashboard</title>
+    <style>
+        /* Scoped minimal overrides to ensure layout on this page */
+        .container { max-width: 1100px; margin: 24px auto; padding: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container dashboard">
+    <header class="dash-header">
+        <h1>AI Video Player</h1>
+        <div class="user-info">Signed in as <strong id="userNameDisplay"></strong></div>
+    </header>
+
+    <div class="player-grid">
+        <section class="player-panel">
+            <div class="video-wrap">
+                <video id="video" class="video-element" preload="metadata"></video>
+                <div class="video-overlay" id="videoOverlay">No video loaded</div>
+                <div class="voice-indicator" id="voiceIndicator" style="display:none;">
+                    <span>🎤 Listening...</span>
+                </div>
+            </div>
+
+            <div class="aspect-controls">
+                <button class="aspect-btn active" data-aspect="16-9" title="16:9 - Widescreen">16:9</button>
+                <button class="aspect-btn" data-aspect="9-16" title="9:16 - Portrait">9:16</button>
+                <button class="aspect-btn" data-aspect="4-3" title="4:3 - Standard">4:3</button>
+                <button class="aspect-btn" data-aspect="1-1" title="1:1 - Square">1:1</button>
+                <button class="aspect-btn" data-aspect="21-9" title="21:9 - Ultrawide">21:9</button>
+            </div>
+
+            <div class="controls">
+                <div class="left-controls">
+                    <button id="playBtn" class="btn">Play</button>
+                    <button id="pauseBtn" class="btn">Pause</button>
+                    <button id="stopBtn" class="btn">Stop</button>
+                    <button id="voiceControlBtn" class="btn voice-btn active" title="Click to toggle voice control (say 'Hey' or 'OK' to use)">🎤 ON</button>
+                </div>
+
+                <div class="center-controls">
+                    <input id="progress" type="range" min="0" max="100" value="0">
+                    <div class="time"> <span id="current">0:00</span> / <span id="duration">0:00</span> </div>
+                </div>
+
+                <div class="right-controls">
+                    <label class="speed-label">Speed</label>
+                    <select id="speedSelect" class="speed-select">
+                        <option value="0.5">0.5x</option>
+                        <option value="1" selected>1x</option>
+                        <option value="1.5">1.5x</option>
+                        <option value="2">2x</option>
+                    </select>
+
+                    <label class="vol-label">Vol</label>
+                    <input id="volume" type="range" min="0" max="1" step="0.01" value="1">
+                    
+                    <button id="fullscreenBtn" class="btn" title="Toggle fullscreen (F)">🖥️ FS</button>
+                </div>
+            </div>
+        </section>
+
+        <aside class="sidebar">
+            <div class="upload-card" id="uploadCard">
+                <div class="upload-area" id="uploadArea">
+                    <h3>Upload Video</h3>
+                    <label for="videoFile"><p>Drag & drop a video file here or click to browse</p></label>
+                    <input type="file" id="videoFile" accept="video/*" style="display:none;">
+                    <progress id="uploadProgress" value="0" max="100" style="display:none; width:100%; margin-top:10px;"></progress>
+                </div>
+                <button id="uploadBtn" class="btn primary" style="width:100%; margin-top:12px;">Upload</button>
+            </div>
+
+            <div class="playlist-card">
+                <h3>Your Videos</h3>
+                <ul id="playlist" class="playlist"></ul>
+            </div>
+        </aside>
+    </div>
+</div>
+
+<script>
+const API = "http://localhost:5000";
+const username = localStorage.getItem("username");
+if (!username) {
+    alert('You are not logged in. Redirecting to login.');
+    window.location.href = './login.html';
+}
+document.getElementById('userNameDisplay').textContent = username || 'guest';
+
+loadVideos();
+
+// Drag and drop functionality
+const uploadArea = document.getElementById('uploadArea');
+const fileInput = document.getElementById('videoFile');
+const uploadText = uploadArea.querySelector('p');
+let selectedFile = null;
+
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.style.backgroundColor = '#f0f0f0';
+});
+
+uploadArea.addEventListener('dragleave', () => {
+    uploadArea.style.backgroundColor = '';
+});
+
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.style.backgroundColor = '';
+    const files = e.dataTransfer.files;
+    if (files.length > 0 && files[0].type.startsWith('video/')) {
+        selectedFile = files[0];
+        uploadText.textContent = `Selected: ${files[0].name}`;
+    } else {
+        alert('Please drop a valid video file.');
+    }
+});
+
+fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) {
+        selectedFile = fileInput.files[0];
+        uploadText.textContent = `Selected: ${fileInput.files[0].name}`;
+    } else {
+        selectedFile = null;
+        uploadText.textContent = 'Drag & drop a video file here or click to browse';
+    }
+});
+
+document.getElementById('uploadBtn').addEventListener('click', uploadVideo);
+
+function uploadVideo() {
+    if (!username) { alert('You must be logged in to upload'); return; }
+    const file = selectedFile;
+    if (!file) { alert('Select a file first'); return; }
+
+    const uploadBtn = document.getElementById('uploadBtn');
+    const progressBar = document.getElementById('uploadProgress');
+    uploadBtn.disabled = true;
+    uploadBtn.textContent = 'Uploading...';
+    progressBar.style.display = 'block';
+    progressBar.value = 0;
+
+    const formData = new FormData();
+    formData.append("video", file);
+    formData.append("username", username);
+
+    const xhr = new XMLHttpRequest();
+
+    xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            progressBar.value = percent;
+            uploadBtn.textContent = `Uploading... ${percent}%`;
+        }
+    });
+
+    xhr.addEventListener('load', () => {
+        progressBar.style.display = 'none';
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = 'Upload';
+
+        let data;
+        try { data = JSON.parse(xhr.responseText); } catch(e) { data = null; }
+        if (xhr.status === 200 && data && data.status === 'video_uploaded') {
+            alert('Video uploaded successfully');
+            fileInput.value = '';
+            selectedFile = null;
+            uploadText.textContent = 'Drag & drop a video file here or click to browse';
+            loadVideos();
+        } else if (data && data.status === 'missing_data') {
+            alert('Upload failed: missing username or file');
+        } else {
+            alert('Upload failed');
+            console.error('Upload response:', data);
+        }
+    });
+
+    xhr.addEventListener('error', () => {
+        progressBar.style.display = 'none';
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = 'Upload';
+        alert('Upload failed');
+    });
+
+    xhr.open('POST', API + "/upload-video");
+    xhr.send(formData);
+}
+
+function loadVideos() {
+    fetch(API + "/get-videos/" + username)
+    .then(async res => {
+        const text = await res.text();
+        let videos;
+        try { videos = JSON.parse(text); } catch(e) { console.error('Invalid JSON from /get-videos:', text); videos = []; }
+        console.log('/get-videos response', videos);
+        // alert('Videos response: ' + JSON.stringify(videos));  // Temporary debug
+
+        const list = document.getElementById('playlist');
+        list.innerHTML = '';
+
+        if (!videos || videos.length === 0) {
+            const li = document.createElement('li');
+            li.textContent = 'No videos uploaded yet';
+            li.style.opacity = '0.7';
+            list.appendChild(li);
+            document.getElementById('videoOverlay').textContent = 'No video loaded';
+            document.getElementById('videoOverlay').style.display = 'flex';
+            return;
+        }
+
+        videos.forEach((item) => {
+            const name = Array.isArray(item) ? item[0] : item;
+            const li = document.createElement('li');
+            li.textContent = name;
+            li.onclick = () => loadIntoPlayer(name);
+            list.appendChild(li);
+        });
+
+        // Auto-load most recent
+        const last = videos[videos.length - 1];
+        const latest = Array.isArray(last) ? last[0] : last;
+        loadIntoPlayer(latest);
+    })
+    .catch(err => { console.error('Failed to load videos', err); });
+}
+
+function loadIntoPlayer(filename) {
+    const v = document.getElementById('video');
+    v.src = API + '/videos/' + username + '/' + filename;
+    v.load();
+    v.play().catch(()=>{});
+    document.getElementById('videoOverlay').style.display = 'none';
+
+    // Highlight active video in playlist
+    const playlistItems = document.querySelectorAll('#playlist li');
+    playlistItems.forEach(item => item.classList.remove('active'));
+    const activeItem = Array.from(playlistItems).find(item => item.textContent === filename);
+    if (activeItem) activeItem.classList.add('active');
+}
+
+document.getElementById('uploadBtn').addEventListener('click', uploadVideo);
+window.addEventListener('load', loadVideos);
+
+</script>
+
+<script src="js/player.js"></script>
+<script src="js/voice.js"></script>
+
+</body>
+</html>
